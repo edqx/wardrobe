@@ -2,6 +2,7 @@ const std = @import("std");
 
 pub const Boundary = @import("Boundary.zig");
 pub const WriteStream = @import("write_stream.zig").WriteStream;
+pub const writeStream = @import("write_stream.zig").writeStream;
 
 test {
     std.testing.refAllDecls(@import("Boundary.zig"));
