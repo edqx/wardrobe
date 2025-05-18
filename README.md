@@ -31,7 +31,7 @@ To access the generated boundary, use `boundary.slice()`.
 
 #### Content-Type
 For the HTTP Content-Type header value for a boundary, use `boundary.contentType()`. This returns a slice in the format
-`multipart/form-data; boundary=BOUNDARY SLICE`
+`multipart/form-data; boundary=<boundary>`
 
 ### Write Stream
 Creating a write stream just needs an underlying writer to write to:

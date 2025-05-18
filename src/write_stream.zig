@@ -42,7 +42,7 @@ pub fn WriteStream(UnderlyingWriter: type) type {
             }
         }
 
-        pub fn beginTextEntry(self: @This(), name: []const u8) !void {
+        pub fn beginTextEntry(self: *@This(), name: []const u8) !void {
             std.debug.assert(!self.in_entry);
             std.debug.assert(!self.ended);
             try self.writeBoundary();
@@ -51,7 +51,7 @@ pub fn WriteStream(UnderlyingWriter: type) type {
             self.in_entry = true;
         }
 
-        pub fn beginFileEntry(self: @This(), name: []const u8, content_type: []const u8, file_name: []const u8) !void {
+        pub fn beginFileEntry(self: *@This(), name: []const u8, content_type: []const u8, file_name: []const u8) !void {
             std.debug.assert(!self.in_entry);
             std.debug.assert(!self.ended);
             try self.writeBoundary();
@@ -61,14 +61,14 @@ pub fn WriteStream(UnderlyingWriter: type) type {
             self.in_entry = true;
         }
 
-        pub fn endEntry(self: @This()) !void {
+        pub fn endEntry(self: *@This()) !void {
             std.debug.assert(self.in_entry);
             std.debug.assert(!self.ended);
             try self.rawWriter().print("\r\n", .{});
             self.in_entry = false;
         }
 
-        pub fn endEntries(self: @This()) !void {
+        pub fn endEntries(self: *@This()) !void {
             std.debug.assert(!self.in_entry);
             std.debug.assert(!self.ended);
             try self.writeLastBoundary();
@@ -90,7 +90,7 @@ test WriteStream {
 
     const writer = output.writer(std.testing.allocator);
 
-    const write_stream = writeStream(.buffer("----ZeppelinMessageBoundarydGMntdcUv30758LEJIwq"), writer);
+    var write_stream = writeStream(.buffer("----ZeppelinMessageBoundarydGMntdcUv30758LEJIwq"), writer);
 
     try write_stream.beginTextEntry("payload_json");
     try write_stream.writer().print("hello", .{});
