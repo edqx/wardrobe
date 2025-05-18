@@ -7,6 +7,8 @@ pub fn WriteStream(UnderlyingWriter: type) type {
         underlying_writer: UnderlyingWriter,
         boundary: Boundary,
 
+        in_entry: bool = false,
+
         pub fn rawWriter(self: @This()) UnderlyingWriter {
             return self.underlying_writer;
         }
@@ -40,20 +42,25 @@ pub fn WriteStream(UnderlyingWriter: type) type {
         }
 
         pub fn beginTextEntry(self: @This(), name: []const u8) !void {
+            std.debug.assert(!self.in_entry);
             try self.writeBoundary();
             try self.writeDispositionHeader(name, null);
             try self.writeHeaderEnd();
+            self.in_entry = true;
         }
 
         pub fn beginFileEntry(self: @This(), name: []const u8, content_type: []const u8, file_name: []const u8) !void {
+            std.debug.assert(!self.in_entry);
             try self.writeBoundary();
             try self.writeDispositionHeader(name, file_name);
             try self.writeHeader("Content-Type", "{s}", .{content_type});
             try self.writeHeaderEnd();
+            self.in_entry = true;
         }
 
         pub fn endEntry(self: @This()) !void {
             try self.rawWriter().print("\r\n", .{});
+            self.in_entry = false;
         }
 
         pub fn endEntries(self: @This()) !void {
