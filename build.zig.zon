@@ -1,0 +1,11 @@
+.{
+    .name = .wardrobe,
+    .fingerprint = 0x2c80050e3b50dd1d,
+    .version = "0.0.1",
+    .dependencies = .{},
+    .paths = .{
+        "src",
+        "build.zig",
+        "build.zig.zon",
+    },
+}
