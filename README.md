@@ -27,6 +27,12 @@ If you want to pass in a boundary, you can also use `wardrobe.Boundary.buffer`:
 const boundary: wardrobe.Boundary = .buffer("----MyApplicationBoundaryRANDOMBYTES");
 ```
 
+To access the generated boundary, use `boundary.slice()`.
+
+#### Content-Type
+For the HTTP Content-Type header value for a boundary, use `boundary.contentType()`. This returns a slice in the format
+`multipart/form-data; boundary=BOUNDARY SLICE`
+
 ### Write Stream
 Creating a write stream just needs an underlying writer to write to:
 ```zig
@@ -42,14 +48,14 @@ Given a write stream, you have the following functions to write form data sectio
 ```zig
 pub fn writer(self: WriteStream) Writer;
 
-pub fn beginTextEntry(self: WriteStream) !void;
-pub fn beginFileEntry(self: WriteStream) !void;
+pub fn beginTextEntry(self: WriteStream, name: []const u8) !void;
+pub fn beginFileEntry(self: WriteStream, name: []const u8, content_type: []const u8, file_name: []const u8) !void;
 
 pub fn endEntry(self: WriteStream) !void;
 pub fn endEntries(self: WriteStream) !void;
 ```
 
-There are runtime checks to make sure you call functions in the right order. You can follow
+There are runtime assertions to make sure you call functions in the right order. You can follow
 this pseudocode to know which functions to call:
 
 ```

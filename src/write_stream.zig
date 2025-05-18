@@ -8,6 +8,7 @@ pub fn WriteStream(UnderlyingWriter: type) type {
         boundary: Boundary,
 
         in_entry: bool = false,
+        ended: bool = false,
 
         pub fn rawWriter(self: @This()) UnderlyingWriter {
             return self.underlying_writer;
@@ -43,6 +44,7 @@ pub fn WriteStream(UnderlyingWriter: type) type {
 
         pub fn beginTextEntry(self: @This(), name: []const u8) !void {
             std.debug.assert(!self.in_entry);
+            std.debug.assert(!self.ended);
             try self.writeBoundary();
             try self.writeDispositionHeader(name, null);
             try self.writeHeaderEnd();
@@ -51,6 +53,7 @@ pub fn WriteStream(UnderlyingWriter: type) type {
 
         pub fn beginFileEntry(self: @This(), name: []const u8, content_type: []const u8, file_name: []const u8) !void {
             std.debug.assert(!self.in_entry);
+            std.debug.assert(!self.ended);
             try self.writeBoundary();
             try self.writeDispositionHeader(name, file_name);
             try self.writeHeader("Content-Type", "{s}", .{content_type});
@@ -59,12 +62,17 @@ pub fn WriteStream(UnderlyingWriter: type) type {
         }
 
         pub fn endEntry(self: @This()) !void {
+            std.debug.assert(self.in_entry);
+            std.debug.assert(!self.ended);
             try self.rawWriter().print("\r\n", .{});
             self.in_entry = false;
         }
 
         pub fn endEntries(self: @This()) !void {
+            std.debug.assert(!self.in_entry);
+            std.debug.assert(!self.ended);
             try self.writeLastBoundary();
+            self.ended = true;
         }
     };
 }
