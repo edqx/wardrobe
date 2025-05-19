@@ -1,6 +1,7 @@
 const std = @import("std");
 
 const Boundary = @import("Boundary.zig");
+const parse = @import("parse.zig");
 
 const boundary_indicator = "\r\n--";
 
@@ -26,22 +27,13 @@ pub fn Scanner(comptime buffer_size: usize, UnderlyingReader: type) type {
     return struct {
         const ScannerT = @This();
 
-        pub const Error = UnderlyingReader.Error || error{ EndOfStream, NotFormData, InvalidBoundary };
-
         pub const Entry = struct {
-            pub const Kind = union(enum) {
-                pub const File = struct {
-                    file_name: []const u8,
-                    content_type: ?[]const u8,
-                };
-
-                text: void,
-                file: File,
-            };
-
             name: []const u8,
-            kind: Kind,
+            file_name: ?[]const u8,
+            content_type: ?[]const u8,
         };
+
+        pub const Error = UnderlyingReader.Error || error{ EndOfStream, NotFormData, InvalidBoundary };
 
         pub const Reader = std.io.Reader(*ScannerT, Error, read);
         const BufferedReader = std.io.Reader(*ScannerT, Error, readFromBuffer);
@@ -206,7 +198,8 @@ pub fn Scanner(comptime buffer_size: usize, UnderlyingReader: type) type {
             } else if (std.mem.eql(u8, &next_two_bytes, "\r\n")) {
                 var entry: Entry = .{
                     .name = "",
-                    .kind = .text,
+                    .file_name = null,
+                    .content_type = null,
                 };
                 while (true) {
                     const start_idx = self.data_list.items.len;
@@ -235,20 +228,11 @@ pub fn Scanner(comptime buffer_size: usize, UnderlyingReader: type) type {
                             if (std.mem.eql(u8, parameter_name, "name")) {
                                 entry.name = parseParameterValue(parameter_value);
                             } else if (std.mem.eql(u8, parameter_name, "filename")) {
-                                if (entry.kind != .text) return Error.InvalidBoundary;
-                                entry.kind = .{
-                                    .file = .{
-                                        .file_name = parseParameterValue(parameter_value),
-                                        .content_type = null,
-                                    },
-                                };
+                                entry.file_name = parseParameterValue(parameter_value);
                             }
                         }
                     } else if (std.mem.eql(u8, header_name, "Content-Type")) {
-                        const content_type = parameters.next() orelse return Error.InvalidBoundary;
-                        if (entry.kind != .file) return Error.InvalidBoundary;
-
-                        entry.kind.file.content_type = content_type;
+                        entry.content_type = parameters.next() orelse return Error.InvalidBoundary;
                     } else continue;
                 }
                 return entry;
@@ -290,16 +274,15 @@ test Scanner {
 
         switch (i) {
             0 => {
-                try std.testing.expect(entry.kind == .file);
                 try std.testing.expectEqualSlices(u8, "profile_picture", entry.name);
-                try std.testing.expectEqualSlices(u8, "profile.jpg", entry.kind.file.file_name);
-                try std.testing.expect(entry.kind.file.content_type != null);
-                try std.testing.expectEqualSlices(u8, "image/jpeg", entry.kind.file.content_type.?);
+                try std.testing.expect(entry.file_name != null);
+                try std.testing.expectEqualSlices(u8, "profile.jpg", entry.file_name.?);
+                try std.testing.expect(entry.content_type != null);
+                try std.testing.expectEqualSlices(u8, "image/jpeg", entry.content_type.?);
 
                 try std.testing.expectEqualSlices(u8, "[Jpeg File Data]", data);
             },
             1 => {
-                try std.testing.expect(entry.kind == .text);
                 try std.testing.expectEqualSlices(u8, "payload_json", entry.name);
 
                 try std.testing.expectEqualSlices(u8, "{}", data);
