@@ -2,7 +2,7 @@
 
 A lightweight, simple [HTTP `multipart/form-data`](https://www.rfc-editor.org/rfc/rfc7578) library for Zig.
 
-Supports writing form data payloads. Parsing not currently supported.
+Supports writing form data payloads.
 
 ## Usage
 
