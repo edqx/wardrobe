@@ -15,20 +15,20 @@ const allowed_boundary_bytes = blk: {
     break :blk out;
 };
 
-const content_type = "multipart/form-data; boundary=";
+const template_content_type = "multipart/form-data; boundary=";
 const prefix = "----";
 
-const max_boundary_length = 70;
+pub const max_boundary_length = 70;
 const entropy_length = 20;
 
-const base_buffer: [content_type.len + max_boundary_length]u8 = blk: {
-    var buf: [content_type.len + max_boundary_length]u8 = undefined;
-    buf[0..content_type.len].* = content_type.*;
-    buf[content_type.len..][0..prefix.len].* = prefix.*;
+const base_buffer: [template_content_type.len + max_boundary_length]u8 = blk: {
+    var buf: [template_content_type.len + max_boundary_length]u8 = undefined;
+    buf[0..template_content_type.len].* = template_content_type.*;
+    buf[template_content_type.len..][0..prefix.len].* = prefix.*;
     break :blk buf;
 };
 
-header_buffer: [content_type.len + max_boundary_length]u8,
+header_buffer: [template_content_type.len + max_boundary_length]u8,
 boundary_len: usize,
 
 fn specRandom(buf: []u8, rand: std.Random) void {
@@ -43,7 +43,7 @@ pub fn entropy(boundary_label: []const u8, rand: std.Random) Boundary {
     std.debug.assert(boundary_len <= max_boundary_length);
 
     var header_buffer = base_buffer;
-    const boundary_buf = header_buffer[content_type.len + prefix.len ..];
+    const boundary_buf = header_buffer[template_content_type.len + prefix.len ..];
 
     @memcpy(boundary_buf[0..boundary_label.len], boundary_label);
     specRandom(boundary_buf[boundary_label.len..], rand);
@@ -58,7 +58,7 @@ pub fn buffer(boundary: []const u8) Boundary {
     std.debug.assert(boundary.len <= max_boundary_length);
 
     var header_buffer = base_buffer;
-    const boundary_buf = header_buffer[content_type.len..];
+    const boundary_buf = header_buffer[template_content_type.len..];
 
     @memcpy(boundary_buf[0..boundary.len], boundary);
 
@@ -68,12 +68,33 @@ pub fn buffer(boundary: []const u8) Boundary {
     };
 }
 
+pub fn parseContentType(content_type: []const u8) !Boundary {
+    var parameters = std.mem.tokenizeAny(u8, content_type, "; ");
+    var boundary: ?Boundary = null;
+
+    const type_name = parameters.next() orelse return error.Invalid;
+
+    if (!std.mem.eql(u8, type_name, "multipart/form-data")) return error.Invalid;
+
+    while (parameters.next()) |parameter| {
+        const eq = std.mem.indexOfScalar(u8, parameter, '=') orelse return error.Invalid;
+        const name = parameter[0..eq];
+        const value = parameter[eq + 1 ..];
+
+        if (std.mem.eql(u8, name, "boundary")) {
+            boundary = .buffer(value);
+        }
+    }
+
+    return boundary orelse return error.Invalid;
+}
+
 pub inline fn slice(self: Boundary) []const u8 {
-    return self.header_buffer[content_type.len..][0..self.boundary_len];
+    return self.header_buffer[template_content_type.len..][0..self.boundary_len];
 }
 
 pub inline fn contentType(self: Boundary) []const u8 {
-    return self.header_buffer[0 .. content_type.len + self.boundary_len];
+    return self.header_buffer[0 .. template_content_type.len + self.boundary_len];
 }
 
 test entropy {
