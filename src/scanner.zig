@@ -123,49 +123,6 @@ pub fn Scanner(comptime buffer_size: usize, UnderlyingReader: type) type {
             @memcpy(bytes[0..num_bytes_read], buffer[0..num_bytes_read]);
 
             return num_bytes_read;
-
-            // const expected_boundary = self.boundary.slice();
-
-            // const num_read_bytes = try self.readImpl(bytes[0..@min(buffer_size, bytes.len)]); // only read max buffer size at a time
-            // const bytes_read = bytes[0..num_read_bytes];
-
-            // if (std.mem.indexOfScalar(u8, bytes_read, boundary_indicator[0])) |idx| {
-            //     // var buffer: [boundary_indicator.len + Boundary.max_boundary_length]u8 = undefined;
-            //     var buffer: [buffer_size]u8 = undefined;
-
-            //     const total_check_len = boundary_indicator.len + expected_boundary.len;
-
-            //     const check_existing = bytes_read[idx..];
-            //     @memcpy(buffer[0..check_existing.len], check_existing);
-
-            //     if (check_existing.len < total_check_len) {
-            //         const check_new_len = total_check_len - check_existing.len;
-
-            //         var buffered_reader: BufferedReader = .{ .context = self };
-            //         const read_check = try buffered_reader.readAll(buffer[check_existing.len..][0..check_new_len]);
-
-            //         if (read_check != check_new_len) return Error.EndOfStream;
-            //     }
-
-            //     if (eqlFmt(buffer[0..total_check_len], "{s}{s}", .{ boundary_indicator, expected_boundary })) {
-            //         const remaining_bytes = bytes_read.len - idx;
-            //         @memcpy(self.buffer[0..remaining_bytes], bytes_read[idx..]);
-            //         self.buffer_len = remaining_bytes;
-            //         if (idx == 0) { // this means eof
-            //             _ = try self.readImpl(buffer[0..total_check_len]); // re-use the buffer to skip the boundary
-            //         }
-            //         return idx;
-            //     }
-            //     const read_until = std.mem.indexOfScalarPos(u8, bytes_read, idx + 1, boundary_indicator[0]) orelse bytes_read.len;
-            //     const remaining_bytes = bytes_read.len - read_until;
-
-            //     @memcpy(self.buffer[0..remaining_bytes], bytes_read[read_until..]);
-            //     self.buffer_len = remaining_bytes;
-
-            //     return read_until;
-            // }
-
-            // return bytes_read.len;
         }
 
         pub fn reader(self: *ScannerT) Reader {
