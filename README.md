@@ -46,13 +46,13 @@ const write_stream = wardrobe.writeStream(.entropy("MyApplicationBoundary", prng
 
 Given a write stream, you have the following functions to write form data sections:
 ```zig
-pub fn writer(self: WriteStream) Writer;
+pub fn writer(self: *WriteStream) Writer;
 
-pub fn beginTextEntry(self: WriteStream, name: []const u8) !void;
-pub fn beginFileEntry(self: WriteStream, name: []const u8, content_type: []const u8, file_name: []const u8) !void;
+pub fn beginTextEntry(self: *WriteStream, name: []const u8) !void;
+pub fn beginFileEntry(self: *WriteStream, name: []const u8, content_type: []const u8, file_name: []const u8) !void;
 
-pub fn endEntry(self: WriteStream) !void;
-pub fn endEntries(self: WriteStream) !void;
+pub fn endEntry(self: *WriteStream) !void;
+pub fn endEntries(self: *WriteStream) !void;
 ```
 
 There are runtime assertions to make sure you call functions in the right order. You can follow
