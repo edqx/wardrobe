@@ -113,3 +113,9 @@ test contentType {
 
     try std.testing.expectEqualSlices(u8, "multipart/form-data; boundary=----ZeppelinMessageBoundaryONETWOTHREEFOUR", boundary.contentType());
 }
+
+test parseContentType {
+    const boundary: Boundary = try parseContentType("multipart/form-data; boundary=------Boundary");
+
+    try std.testing.expectEqualSlices(u8, "------Boundary", boundary.slice());
+}
