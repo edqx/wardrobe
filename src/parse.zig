@@ -64,6 +64,7 @@ pub fn fromSlice(allocator: std.mem.Allocator, boundary: Boundary, slice: []cons
 }
 
 test fromSlice {
+    // https://medium.com/@muhebollah.diu/understanding-multipart-form-data-the-ultimate-guide-for-beginners-fd039c04553d
     const data = "------WebKitFormBoundary7MA4YWxkTrZu0gW\r\n" ++
         "Content-Disposition: form-data; name=\"username\"\r\n" ++
         "\r\n" ++
