@@ -82,7 +82,7 @@ pub fn parseContentType(content_type: []const u8) !Boundary {
         const value = parameter[eq + 1 ..];
 
         if (std.mem.eql(u8, name, "boundary")) {
-            if (value > max_boundary_length) return error.Invalid;
+            if (value.len > max_boundary_length) return error.Invalid;
 
             boundary = .buffer(value);
         }
