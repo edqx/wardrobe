@@ -4,7 +4,7 @@ A lightweight, simple [HTTP `multipart/form-data`](https://www.rfc-editor.org/rf
 
 Supports writing form data payloads.
 
-## Usage
+## Writing Usage
 
 ### Boundary
 To start writing form data, you need to create a boundary string for your application. The spec requires
@@ -66,6 +66,60 @@ for each entry:
 
 write_stream.endEntries();
 ```
+
+## Reading Usage
+
+### Boundary
+Given a 'Content-Type' header, you can use `Boundary.parseContentType` to get a boundary object:
+```zig
+const boundary = try wardrobe.Boundary.parseContentType("multipart/form-data; boundary=------Boundary");
+```
+
+The function returns `error.Invalid` if the header is not valid for `multipart/form-data`, or if the boundary
+is too long.
+
+### Scanner
+Given a reader, you can iterate through the form data entries of a body. Note that there's no guarantee that the reader
+only reads what is necessary, it may overflow.
+
+The Scanner API takes an allocator, but the allocations are only temporary.
+
+```zig
+var scanner = try scanner(allocator, boundary, reader);
+defer scanner.deinit();
+
+while (try scanner.nextEntry()) |entry| {
+    const data = scanner.reader().readAllAlloc(allocator, std.math.maxInt(usize));
+    defer std.testing.allocator.free(data);
+}
+``` 
+
+`scanner.reader()` returns a reader that gives EOF upon the end of the current active entry's data.
+
+The returned entry has the following signature:
+```zig
+pub const Scanner.Entry = struct {
+    name: []const u8,
+    file_name: ?[]const u8,
+    content_type: ?[]const u8,
+};
+```
+
+### Parser
+Sometimes, it may be useful to parse an entire response body or slice at once. Wardrobe provides utility functions
+in `wardrobe.parse`:
+```zig
+const entries = try wardrobe.parse.fromSlice(allocator, boundary, slice);
+// or try wardrobe.parse.fromReader(allocator, boundary, reader);
+// or try wardrobe.parse.fromScanner(allocator, boundary, scanner);
+defer wardrobe.parse.deinitEntries(entries);
+```
+
+The entries returned is the same entry struct as in [Scanner.Entry](#scanner), but also has a `data: []const u8` field
+for accessing the whole parsed data.
+
+Since you own all of the data and entries returned, you can use `wardrobe.parse.deinitEntries`
+(or `parse.Entry.deinit` for individual entries) to clean-up.
 
 ### License
 All Wardrobe code is under the MIT license.
