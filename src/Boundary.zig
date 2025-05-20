@@ -119,3 +119,10 @@ test parseContentType {
 
     try std.testing.expectEqualSlices(u8, "------Boundary", boundary.slice());
 }
+
+test "parseContentType errors" {
+    try std.testing.expectError(error.Invalid, parseContentType("multipart/fart-data; boundary=------Boundary"));
+    try std.testing.expectError(error.Invalid, parseContentType("multipart/form-data; boundary------Boundary"));
+    try std.testing.expectError(error.Invalid, parseContentType(""));
+    try std.testing.expectError(error.Invalid, parseContentType("multipart/form-data; boundary------This---------Boundary---------Is-------------Really-------------------------------Long--------------------"));
+}
