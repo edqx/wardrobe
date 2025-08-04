@@ -2,12 +2,13 @@ const std = @import("std");
 
 const Boundary = @import("Boundary.zig");
 const parse = @import("parse.zig");
+const changeDetectionStream = @import("change_detection_stream.zig").changeDetectionStream;
 
 const boundary_indicator = "\r\n--";
 
 fn eqlFmt(source: []const u8, comptime fmt: []const u8, args: anytype) bool {
     var counter = std.io.countingWriter(std.io.null_writer);
-    var change_stream = std.io.changeDetectionStream(source, counter.writer());
+    var change_stream = changeDetectionStream(source, counter.writer());
     change_stream.writer().print(fmt, args) catch unreachable;
     return !change_stream.anything_changed and counter.bytes_written == source.len;
 }
@@ -35,8 +36,8 @@ pub fn Scanner(comptime buffer_size: usize, UnderlyingReader: type) type {
 
         pub const Error = UnderlyingReader.Error || error{ EndOfStream, NotFormData, InvalidBoundary };
 
-        pub const Reader = std.io.Reader(*ScannerT, Error, read);
-        const BufferedReader = std.io.Reader(*ScannerT, Error, readFromBuffer);
+        pub const Reader = std.io.GenericReader(*ScannerT, Error, read);
+        const BufferedReader = std.io.GenericReader(*ScannerT, Error, readFromBuffer);
 
         underlying_reader: UnderlyingReader,
         boundary: Boundary,

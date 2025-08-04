@@ -34,31 +34,43 @@ pub fn WriteStream(UnderlyingWriter: type) type {
             try self.rawWriter().print("\r\n", .{});
         }
 
-        pub fn writeDispositionHeader(self: @This(), name: []const u8, file_name: ?[]const u8) !void {
+        pub fn writeDispositionHeaderFmt(self: @This(), comptime name_fmt: []const u8, args: anytype, file_name: ?[]const u8) !void {
             if (file_name) |str| {
-                try self.writeHeader("Content-Disposition", "form-data; name=\"{s}\"; filename=\"{s}\"", .{ name, str });
+                try self.writeHeader("Content-Disposition", "form-data; name=\"" ++ name_fmt ++ "\"; filename=\"{s}\"", args ++ .{str});
             } else {
-                try self.writeHeader("Content-Disposition", "form-data; name=\"{s}\"", .{name});
+                try self.writeHeader("Content-Disposition", "form-data; name=\"" ++ name_fmt ++ "\"", args);
             }
         }
 
-        pub fn beginTextEntry(self: *@This(), name: []const u8) !void {
+        pub fn writeDispositionHeader(self: @This(), name: []const u8, file_name: ?[]const u8) !void {
+            try self.writeDispositionHeaderFmt("{s}", .{name}, file_name);
+        }
+
+        pub fn beginTextEntryFmt(self: *@This(), comptime name_fmt: []const u8, args: anytype) !void {
             std.debug.assert(!self.in_entry);
             std.debug.assert(!self.ended);
             try self.writeBoundary();
-            try self.writeDispositionHeader(name, null);
+            try self.writeDispositionHeaderFmt(name_fmt, args, null);
+            try self.writeHeaderEnd();
+            self.in_entry = true;
+        }
+
+        pub fn beginTextEntry(self: *@This(), name: []const u8) !void {
+            try self.beginTextEntryFmt("{s}", .{name});
+        }
+
+        pub fn beginFileEntryFmt(self: *@This(), comptime name_fmt: []const u8, args: anytype, content_type: []const u8, file_name: []const u8) !void {
+            std.debug.assert(!self.in_entry);
+            std.debug.assert(!self.ended);
+            try self.writeBoundary();
+            try self.writeDispositionHeaderFmt(name_fmt, args, file_name);
+            try self.writeHeader("Content-Type", "{s}", .{content_type});
             try self.writeHeaderEnd();
             self.in_entry = true;
         }
 
         pub fn beginFileEntry(self: *@This(), name: []const u8, content_type: []const u8, file_name: []const u8) !void {
-            std.debug.assert(!self.in_entry);
-            std.debug.assert(!self.ended);
-            try self.writeBoundary();
-            try self.writeDispositionHeader(name, file_name);
-            try self.writeHeader("Content-Type", "{s}", .{content_type});
-            try self.writeHeaderEnd();
-            self.in_entry = true;
+            try self.beginFileEntryFmt("{s}", .{name}, content_type, file_name);
         }
 
         pub fn endEntry(self: *@This()) !void {
